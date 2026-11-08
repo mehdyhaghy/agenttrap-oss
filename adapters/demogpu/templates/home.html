@@ -1,0 +1,16 @@
+{{template "head" .}}
+<p class="muted beta">Public beta</p>
+<h1>{{.Pack.Company.Tagline}}</h1>
+<p class="muted">{{.Pack.Company.Description}}</p>
+{{if .Message}}<p class="msg">{{.Message}}</p>{{end}}
+<div class="card">
+<h3>OpenAI-compatible, one line to switch</h3>
+<pre>from openai import OpenAI
+client = OpenAI(base_url="https://api.{{.Domain}}/v1", api_key="YOUR_DEMOGPU_KEY")</pre>
+<p class="muted">Bring your own provider keys, route to dedicated vLLM clusters, pay per token.</p>
+</div>
+<div class="card">
+<h3>Join the waitlist for dedicated H200 capacity</h3>
+<form method="post" action="/waitlist"><input name="email" type="email" placeholder="you@company.com" required><button>Request access</button></form>
+</div>
+{{template "foot" .}}

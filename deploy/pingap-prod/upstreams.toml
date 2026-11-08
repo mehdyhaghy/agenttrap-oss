@@ -1,0 +1,4 @@
+[upstreams.spoke]
+addrs = ["spoke:8080"]
+discovery = "dns"
+update_frequency = "30s"

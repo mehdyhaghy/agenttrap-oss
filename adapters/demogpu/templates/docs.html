@@ -1,0 +1,61 @@
+{{template "head" .}}
+<h1>Quickstart</h1>
+<p>The {{.Pack.Company.Name}} API is compatible with the OpenAI API. Point any OpenAI SDK at our base URL.</p>
+<div class="card">
+<h3>1. Get a trial key</h3>
+<p class="muted">Trial keys are free, rate-limited to 20 requests/minute and expire after 7 days. Production keys are available in the console.</p>
+<pre>curl -X POST https://api.{{.Domain}}/v1/trial-keys \
+  -H "Content-Type: application/json" \
+  -d '{"project": "my-app"}'</pre>
+</div>
+<div class="card">
+<h3>2. Make a request</h3>
+<pre>export DEMOGPU_API_KEY="&lt;your key&gt;"
+
+curl https://api.{{.Domain}}/v1/chat/completions \
+  -H "Authorization: Bearer $DEMOGPU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "{{(index .Pack.Models 0).ID}}", "messages": [{"role": "user", "content": "Hello"}]}'</pre>
+</div>
+<div class="card">
+<h3>3. Models</h3>
+<table><tr><th>ID</th><th>Type</th><th>Context</th></tr>
+{{range .Pack.Models}}<tr><td><code>{{.ID}}</code></td><td>{{.Kind}}</td><td>{{.Context}}</td></tr>{{end}}</table>
+</div>
+<div class="card">
+<h3>4. Bring your own keys (BYOK)</h3>
+<p>Teams can route traffic through their own upstream provider keys or dedicated vLLM clusters. Manage them in the console or via the API:</p>
+<pre>curl https://console.{{.Domain}}/api/v1/provider-keys \
+  -H "Authorization: Bearer $DEMOGPU_API_KEY"</pre>
+</div>
+<div class="card">
+<h3>5. MCP server</h3>
+<p>Manage models, usage and provider keys from MCP clients at <code>https://mcp.{{.Domain}}/mcp</code> (Streamable HTTP, Bearer auth).</p>
+<pre>{
+  "mcpServers": {
+    "demogpu": {
+      "url": "https://mcp.{{.Domain}}/mcp",
+      "headers": { "Authorization": "Bearer ${DEMOGPU_API_KEY}" }
+    }
+  }
+}</pre>
+</div>
+<div class="card">
+<h3>6. Integrations</h3>
+<p>Tools and agents that call the API on behalf of their users can register an integration for a higher rate limit (600 requests/minute). The response includes an integration ID to send as <code>X-DemoGPU-Integration</code>.</p>
+<pre>curl -X POST "{{.IntegrationURL}}" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "&lt;integration name&gt;", "purpose": "&lt;what it does for users&gt;"}'</pre>
+</div>
+<div class="card">
+<h3>7. OAuth</h3>
+<p>Apps and MCP clients can use OAuth 2.1 instead of API keys. {{.Pack.Company.Name}} supports dynamic client registration, the authorization code flow with PKCE, client credentials, the device flow and token exchange. Discovery: <code>https://console.{{.Domain}}/.well-known/openid-configuration</code>.</p>
+<pre>curl -X POST https://console.{{.Domain}}/oauth/token \
+  -u "$CLIENT_ID:$CLIENT_SECRET" \
+  -d grant_type=client_credentials -d scope="inference models:read"</pre>
+</div>
+<div class="card">
+<h3>8. Account assistant (A2A)</h3>
+<p>The account assistant answers usage, model and provider key questions over the A2A protocol (JSON-RPC). Its agent card is at <code>https://mcp.{{.Domain}}/.well-known/agent-card.json</code>; authenticate with an API key or access token.</p>
+</div>
+{{template "foot" .}}

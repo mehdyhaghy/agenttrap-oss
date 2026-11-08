@@ -1,0 +1,11 @@
+{{template "head" .}}
+<div class="card" style="max-width:420px;margin:40px auto">
+<h2>Connect a device</h2>
+<p class="muted">Enter the code shown on your device or in your terminal.</p>
+{{if .Message}}<p class="msg">{{.Message}}</p>{{end}}
+<form method="post" action="/device">
+<input name="user_code" placeholder="XXXX-XXXX" autocomplete="off" required>
+<button>Continue</button>
+</form>
+</div>
+{{template "foot" .}}

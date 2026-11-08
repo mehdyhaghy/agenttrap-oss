@@ -1,0 +1,266 @@
+# Single-node v1: hub and one spoke on one host (spec §30.6).
+#
+# Only Pingap publishes ports. Hub, spoke and PostgreSQL sit on internal
+# networks with no route to the internet and no published ports. The hub admin
+# API listens on loopback inside the hub container:
+#   docker compose exec hub agenttrap admin get /admin/incidents
+# The admin dashboard listens on the hub's address on the internal "core"
+# network (10.90.0.5:9090), reachable only from the host. Open it through an
+# SSH tunnel:  ssh -p 2222 -L 9090:10.90.0.5:9090 root@<server>  ->  http://localhost:9090
+name: agenttrap
+
+# Container logs go to the host journal, so they survive container restarts,
+# recreation by `docker compose up --build` and host reboots (json-file logs
+# are deleted with the container). `docker compose logs` still works. Run
+# scripts/persistent-logs.sh once per host: it makes the journal persistent
+# and caps its size so access logs cannot fill the disk. Hosts without
+# journald (Docker Desktop) set LOG_DRIVER=json-file in .env.
+x-logging: &logging
+  driver: ${LOG_DRIVER:-journald}
+  options: {tag: "{{.Name}}"}
+
+services:
+  postgres:
+    # postgres:18-alpine plus the Apache AGE graph extension (deploy/postgres).
+    build: deploy/postgres
+    image: agenttrap-postgres:dev
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_USER: agenttrap
+      POSTGRES_DB: agenttrap
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks: [core]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agenttrap -d agenttrap"]
+      interval: 5s
+      retries: 20
+
+  hub:
+    build: .
+    image: agenttrap:dev
+    command: ["hub"]
+    restart: unless-stopped
+    cap_drop: [ALL]        # nonroot binary on unprivileged ports needs no capabilities
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment:
+      AGENTTRAP_DB: postgres://agenttrap:${DB_PASSWORD:?run ./scripts/init-secrets.sh}@postgres:5432/agenttrap?sslmode=disable
+      AGENTTRAP_PKI_DIR: /var/lib/agenttrap/pki
+      AGENTTRAP_AUTO_PKI: "true"
+      AGENTTRAP_SPOKE_LISTEN: ":8443"
+      AGENTTRAP_ADMIN_LISTEN: "10.90.0.5:9090"
+      AGENTTRAP_ADMIN_URL: http://10.90.0.5:9090
+      AGENTTRAP_ADMIN_TOKEN_FILE: /run/secrets/admin_token
+      AGENTTRAP_HUB_URL: https://hub:8443
+      AGENTTRAP_SERVER_NAMES: hub
+      AGENTTRAP_BOOTSTRAP_SPOKE: local-1
+      AGENTTRAP_BOOTSTRAP_OUT: /bootstrap/local-1.json
+      AGENTTRAP_RESOLVER_URL: http://resolver:8053
+      # Our own addresses (comma-separated IPs/CIDRs); more can be added in the dashboard.
+      AGENTTRAP_OPERATORS: ${OPERATORS:-}
+      # Attack-map geolocation: DB-IP Lite City MMDB, mounted read-only below.
+      # Absent file = map disabled. Set GEO_DIR to the host directory holding it.
+      AGENTTRAP_GEO_DB: /geo/dbip-city-lite.mmdb
+    secrets: [admin_token]
+    volumes:
+      - hubdata:/var/lib/agenttrap
+      - bootstrap:/bootstrap
+      - ${GEO_DIR:-./deploy/geo}:/geo:ro
+    networks:
+      core: {ipv4_address: 10.90.0.5}
+      hubnet: {}
+      enrichnet: {}
+
+  spoke:
+    image: agenttrap:dev
+    pull_policy: never  # built by the hub service
+    command: ["spoke"]
+    restart: unless-stopped
+    cap_drop: [ALL]        # nonroot binary on unprivileged ports needs no capabilities
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
+    depends_on: [hub]
+    environment:
+      AGENTTRAP_DATA_DIR: /var/lib/agenttrap/spoke
+      AGENTTRAP_BUNDLE: /bootstrap/local-1.json
+      AGENTTRAP_LISTEN: ":8080"
+      AGENTTRAP_SENSOR_LISTEN: ":8081"
+      AGENTTRAP_SSH_LISTEN: ":2022"
+      AGENTTRAP_SSH_RELAYS: 10.89.0.20/32
+      AGENTTRAP_REDIS_LISTEN: ":6379"
+      AGENTTRAP_REDIS_RELAYS: 10.89.0.21/32
+      AGENTTRAP_POSTGRES_LISTEN: ":5433"
+      AGENTTRAP_POSTGRES_RELAYS: 10.89.0.22/32
+      AGENTTRAP_BASE_DOMAIN: ${BASE_DOMAIN:-demogpu.example}
+      AGENTTRAP_TRUSTED_PROXIES: 10.89.0.10/32
+      # Production (real certificate): REDIRECT_HTTPS=true in .env
+      AGENTTRAP_REDIRECT_HTTPS: ${REDIRECT_HTTPS:-false}
+    volumes:
+      - spokedata:/var/lib/agenttrap
+      - bootstrap:/bootstrap:ro
+    networks: [hubnet, facade]
+
+  # Publishes port 22 and forwards to the spoke's SSH decoy on the internal
+  # facade network, prefixing each connection with a PROXY header so the
+  # decoy sees the real client address. It copies bytes only: no keys, no
+  # hub or database access. The host's own sshd listens on 2222.
+  ssh-relay:
+    image: agenttrap:dev
+    pull_policy: never  # built by the hub service
+    command: ["relay", "--listen", ":22", "--backend", "spoke:2022"]
+    restart: unless-stopped
+    logging: *logging
+    # Shed brute-force floods before they reach the decoy or the event store.
+    # A source may open 15 connections, then one more per minute; operators are
+    # exempt. The host firewall (scripts/decoy-firewall.sh) drops sustained
+    # floods at the kernel so they stop entirely.
+    environment:
+      AGENTTRAP_RELAY_RATE_BURST: "15"
+      AGENTTRAP_RELAY_RATE_REFILL: "1m"
+      AGENTTRAP_RELAY_EXEMPT: ${OPERATORS:-}
+    depends_on: [spoke]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "${SSH_PORT:-22}:22"
+    networks:
+      edge: {}
+      facade: {ipv4_address: 10.89.0.20}
+
+  # Publishes port 6379 to the persona's exposed Redis cache decoy on the
+  # spoke. Same hardened, byte-copying relay as ssh-relay; the real cache does
+  # not exist. The decoy is unauthenticated by design (that is the bait) and
+  # stores nothing.
+  redis-relay:
+    image: agenttrap:dev
+    pull_policy: never  # built by the hub service
+    command: ["relay", "--listen", ":6379", "--backend", "spoke:6379"]
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      AGENTTRAP_RELAY_RATE_BURST: "20"
+      AGENTTRAP_RELAY_RATE_REFILL: "30s"
+      AGENTTRAP_RELAY_EXEMPT: ${OPERATORS:-}
+    depends_on: [spoke]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      edge: {}
+      facade: {ipv4_address: 10.89.0.21}
+
+  # Publishes port 5432 to the persona's Postgres decoy on the spoke (:5433).
+  # Same hardened, byte-copying relay. This decoy is completely separate from
+  # the real events database: the spoke has no route to the internal "core"
+  # network where the real Postgres lives, so this can never reach it.
+  pg-relay:
+    image: agenttrap:dev
+    pull_policy: never  # built by the hub service
+    command: ["relay", "--listen", ":5432", "--backend", "spoke:5433"]
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      AGENTTRAP_RELAY_RATE_BURST: "20"
+      AGENTTRAP_RELAY_RATE_REFILL: "30s"
+      AGENTTRAP_RELAY_EXEMPT: ${OPERATORS:-}
+    depends_on: [spoke]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      edge: {}
+      facade: {ipv4_address: 10.89.0.22}
+
+  pingap:
+    image: vicanso/pingap:0.16.1
+    restart: unless-stopped
+    logging: *logging
+    depends_on: [spoke]
+    environment:
+      PINGAP_CONF: /opt/pingap/conf
+      # No PINGAP_ADMIN_ADDR: the Pingap admin UI stays disabled.
+    volumes:
+      # Production uses a writable copy of deploy/pingap-prod (Let's Encrypt
+      # writes the issued certificate into it): PINGAP_CONF_DIR=/opt/agenttrap/pingap PINGAP_CONF_MODE=rw
+      - ${PINGAP_CONF_DIR:-./deploy/pingap}:/opt/pingap/conf:${PINGAP_CONF_MODE:-ro}
+      - ./secrets/tls:/opt/pingap/tls:ro
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    networks:
+      edge: {}
+      facade: {ipv4_address: 10.89.0.10}
+
+  # Reverse-DNS verification of self-declared crawlers for the hub. The only
+  # backend component with internet access; it shares a private network with
+  # the hub alone (never with PostgreSQL) and accepts nothing but an IP.
+  resolver:
+    image: agenttrap:dev
+    pull_policy: never  # built by the hub service
+    command: ["resolver"]
+    restart: unless-stopped
+    logging: *logging
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [edge, enrichnet]
+
+  # Computes JA4 TLS fingerprints from ClientHellos arriving at Pingap. It
+  # shares Pingap's network namespace, so it sees the same client ip:port that
+  # Pingap forwards as X-Real-IP / X-Real-Port. It only reads packets.
+  ja4-sensor:
+    image: agenttrap:dev
+    pull_policy: never  # built by the hub service
+    command: ["ja4-sensor"]
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      spoke: {condition: service_started}
+      pingap: {condition: service_started, restart: true}  # re-join Pingap's new namespace
+    network_mode: "service:pingap"
+    user: "0:0"            # capabilities need uid 0; everything but NET_RAW is dropped
+    cap_drop: [ALL]
+    cap_add: [NET_RAW]
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      AGENTTRAP_JA4_PORTS: "443"
+      AGENTTRAP_JA4_REPORT: http://spoke:8081/sensor/tls
+
+networks:
+  core:     # hub <-> postgres; host reaches the hub admin port here
+    internal: true
+    ipam:
+      config: [{subnet: 10.90.0.0/24}]
+  hubnet:   # spoke -> hub (mTLS)
+    internal: true
+  facade:   # pingap -> spoke
+    internal: true
+    ipam:
+      config: [{subnet: 10.89.0.0/24}]
+  enrichnet:  # hub -> resolver only
+    internal: true
+  edge: {}  # public side of pingap; resolver egress
+
+volumes:
+  pgdata:
+  hubdata:
+  spokedata:
+  bootstrap:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password
+  admin_token:
+    file: ./secrets/admin_token

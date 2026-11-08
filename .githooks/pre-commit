@@ -1,0 +1,32 @@
+#!/bin/sh
+# Refuses a commit that stages a secret or key material.
+# Enable once per clone: git config core.hooksPath .githooks
+set -eu
+
+bad=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '(^|/)(\.env(\..*)?|secrets/.*|pki-offline/.*|.*\.(key|pem|p12|pfx|dump|mmdb))$' | grep -vE '(^|/)\.env\.example$' || true)
+if [ -n "$bad" ]; then
+	echo "pre-commit: refusing to commit secrets or key material:" >&2
+	echo "$bad" | sed 's/^/  /' >&2
+	exit 1
+fi
+
+# Dependency changes must keep every npm and Go dependency permissive.
+if git diff --cached --name-only | grep -qE '(^|/)(go\.(mod|sum)|package\.json|bun\.lock)$'; then
+	if command -v bun >/dev/null 2>&1; then
+		(cd "$(git rev-parse --show-toplevel)" && bun scripts/check-licenses.ts) || {
+			echo "pre-commit: a dependency is not permissively licensed" >&2
+			exit 1
+		}
+	else
+		echo "pre-commit: bun not installed; license check skipped" >&2
+	fi
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+	gitleaks git --staged --no-banner --redact -v --exit-code 1 . || {
+		echo "pre-commit: gitleaks found a secret (decoy values go in .gitleaks.toml)" >&2
+		exit 1
+	}
+else
+	echo "pre-commit: gitleaks not installed; only the filename check ran" >&2
+fi

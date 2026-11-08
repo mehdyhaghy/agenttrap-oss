@@ -1,0 +1,9 @@
+{{template "head" .}}
+<h1>All systems operational</h1>
+<div class="card"><table>
+<tr><td>API (us-east)</td><td>Operational</td></tr><tr><td>API (eu-central)</td><td>Operational</td></tr>
+<tr><td>Console</td><td>Operational</td></tr><tr><td>MCP server</td><td>Operational</td></tr><tr><td>Dedicated vLLM clusters</td><td>Operational</td></tr>
+</table></div>
+<h2>Past incidents</h2>
+{{range .Pack.Incidents}}<div class="card"><strong>{{.Title}}</strong> <span class="muted">— {{.Date}}</span><p>{{.Body}}</p></div>{{else}}<p class="muted">No incidents reported since launch.</p>{{end}}
+{{template "foot" .}}

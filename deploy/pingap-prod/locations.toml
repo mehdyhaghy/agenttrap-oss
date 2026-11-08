@@ -1,0 +1,6 @@
+[locations.facade]
+upstream = "spoke"
+path = "/"
+# Overwrite (not append) client-address headers so clients cannot spoof them.
+# X-Real-Port lets the spoke join requests to the JA4 sensor's fingerprints.
+proxy_set_headers = ["X-Real-IP:$remote_addr", "X-Real-Port:$remote_port", "X-Forwarded-For:$remote_addr", "X-Forwarded-Proto:$scheme"]

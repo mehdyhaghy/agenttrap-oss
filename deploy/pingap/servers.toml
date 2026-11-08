@@ -1,0 +1,11 @@
+[servers.facade]
+addr = "0.0.0.0:80"
+locations = ["facade"]
+access_log = "combined"
+
+[servers.facade_tls]
+addr = "0.0.0.0:443"
+locations = ["facade"]
+global_certificates = true
+enabled_h2 = true
+access_log = "combined"

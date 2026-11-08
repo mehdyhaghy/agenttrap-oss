@@ -1,0 +1,18 @@
+{{template "head" .}}
+<h1>Contact</h1>
+<div class="card" style="max-width:640px">
+{{if .Message}}<p class="msg">{{.Message}}</p>{{end}}
+<form method="post" action="/contact">
+<input name="name" placeholder="Name" maxlength="120">
+<input name="email" type="email" placeholder="Your email (so we can reply)" maxlength="200">
+<select name="topic" style="width:100%;margin:6px 0;padding:10px;background:#0f1219;border:1px solid var(--line);color:var(--fg);border-radius:6px">
+<option value="sales">Sales and capacity</option>
+<option value="support">Support</option>
+<option value="security">Security report</option>
+<option value="other">Other</option>
+</select>
+<textarea name="message" required maxlength="4000" rows="7" placeholder="How can we help?" style="width:100%;margin:6px 0;padding:10px;background:#0f1219;border:1px solid var(--line);color:var(--fg);border-radius:6px;font:inherit"></textarea>
+<button>Send</button>
+</form>
+</div>
+{{template "foot" .}}

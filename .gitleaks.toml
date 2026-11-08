@@ -1,0 +1,18 @@
+# gitleaks config: the default rules, minus the decoy values planted on
+# purpose in the persona and modules. They look like real keys so that
+# intruders try them; none of them grants access to anything.
+# Add a new decoy here by its exact value, never by file or rule.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Planted decoy values"
+regexTarget = "secret"
+regexes = [
+  '''^AKIA287VJ6V9233M2C5T$''',
+  '''^Sm2VjEi3fPrZ4uCxJ1qX4jOqQ0sZ0wB5sMqV5eIj$''',
+  '''^rG7lZ3iX9nU6aU9hX7nC3cX5dK4oQ4jS9gP3zF8x$''',
+  # Kubernetes service-account token (fake RS256 header)
+  '''^eyJhbGciOiJSUzI1NiIsImtpZCI6IjNmOWMxYTdiMmU1ZDQ4ZjBhNmM5YjFlNGQ3MDI4YTUzIn0\.''',
+]

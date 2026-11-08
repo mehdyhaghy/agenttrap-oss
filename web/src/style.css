@@ -1,0 +1,139 @@
+/* Tokens follow the reference data-viz palette: blue for magnitude, fixed
+   status colors for severity (always shown with a text label). */
+:root {
+  color-scheme: light;
+  --bg: #f4f4f2;
+  --surface-1: #fcfcfb;
+  --surface-2: #f0efec;
+  --border: #e2e1dc;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #7a7974;
+  --accent: #2a78d6;
+  --series-1: #2a78d6;
+  --series-1-soft: #86b6ef;
+  --grid: #e7e6e1;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Visitor classes: the same colors as the email digest. */
+  --c-rogue: #d03b3b;
+  --c-agent: #2a78d6;
+  --c-scanner: #d9912b;
+  --c-crawler: #2f9e6e;
+  --c-browser: #8b8a85;
+  --c-unknown: #c9c7c0;
+  --rogue-soft: #fdf0ef;
+  --agent-soft: #eef4fc;
+  --quiet-soft: #eef7f2;
+  --track: #e7e5df;
+  --shadow: 0 1px 2px rgba(20, 20, 18, 0.04), 0 1px 1px rgba(20, 20, 18, 0.02);
+  --shadow-hover: 0 4px 14px rgba(20, 20, 18, 0.07);
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+    --bg: #111110;
+    --surface-1: #1a1a19;
+    --surface-2: #232321;
+    --border: #2e2e2b;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8e8d85;
+    --accent: #3987e5;
+    --series-1: #3987e5;
+    --series-1-soft: #184f95;
+    --grid: #2a2a27;
+    --c-rogue: #e5544f;
+    --c-agent: #4a93ea;
+    --c-scanner: #e3a24a;
+    --c-crawler: #45b584;
+    --c-browser: #9d9c96;
+    --c-unknown: #5c5b56;
+    --rogue-soft: #2e1a19;
+    --agent-soft: #16243a;
+    --quiet-soft: #152a20;
+    --track: #33332f;
+    --shadow: none;
+    --shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #111110;
+  --surface-1: #1a1a19;
+  --surface-2: #232321;
+  --border: #2e2e2b;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #8e8d85;
+  --accent: #3987e5;
+  --series-1: #3987e5;
+  --series-1-soft: #184f95;
+  --grid: #2a2a27;
+  --c-rogue: #e5544f;
+  --c-agent: #4a93ea;
+  --c-scanner: #e3a24a;
+  --c-crawler: #45b584;
+  --c-browser: #9d9c96;
+  --c-unknown: #5c5b56;
+  --rogue-soft: #2e1a19;
+  --agent-soft: #16243a;
+  --quiet-soft: #152a20;
+  --track: #33332f;
+  --shadow: none;
+  --shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text-primary); }
+body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 22px; margin: 0 0 16px; font-weight: 650; letter-spacing: -0.2px; }
+h2 { font-size: 14px; margin: 0 0 12px; font-weight: 600; color: var(--text-secondary); }
+/* A page opens with its title and one sentence on what it is for. */
+.page-intro { margin: -10px 0 20px; color: var(--text-muted); max-width: 760px; }
+.small { font-size: 12.5px; }
+.nowrap { white-space: nowrap; }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+.muted { color: var(--text-muted); }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; min-width: 0; box-shadow: var(--shadow); }
+.grid { display: grid; gap: 16px; }
+.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cols-2 { grid-template-columns: 1fr; } }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-weight: 500; color: var(--text-muted); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 8px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tbody tr { transition: background-color 0.12s; }
+tbody tr:hover { background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.truncate { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.table-wrap { overflow-x: auto; }
+/* A list of addresses in a table cell: wrap onto several lines instead of
+   stretching the column, so the other columns stay readable. */
+.iplist { max-width: 300px; white-space: normal; }
+.iplist a, .iplist span { display: inline-block; margin: 0 10px 3px 0; }
+/* Free-text cells (reasons, why-joined) stay bounded and wrap. */
+.wraptext { max-width: 420px; white-space: normal; overflow-wrap: anywhere; }
+button, select, input { font: inherit; color: var(--text-primary); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; }
+button { cursor: pointer; transition: background-color 0.12s, border-color 0.12s; }
+button:hover { border-color: var(--text-muted); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.empty { color: var(--text-muted); padding: 24px 8px; text-align: center; }
+.error { color: var(--critical); }
+
+/* An address with its country flag: the pair never wraps apart. */
+.addr { white-space: nowrap; }
+.flag { margin-right: 6px; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-size: 1.05em; }
+/* Small rounded label. */
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 1px 9px; border-radius: 999px; background: var(--surface-2); color: var(--text-secondary); font-size: 12px; line-height: 1.7; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }

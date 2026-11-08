@@ -1,0 +1,7 @@
+# Production: Let's Encrypt via HTTP-01 on port 80. Pingap stores the issued
+# certificate back into this file, so this directory must be writable and
+# must not be the git checkout. See docs in README ("Deploy").
+[certificates.demogpu]
+domains = "demogpu.example,www.demogpu.example,docs.demogpu.example,api.demogpu.example,console.demogpu.example,mcp.demogpu.example,status.demogpu.example,vllm.demogpu.example,aws.demogpu.example,k8s.demogpu.example"
+acme = "lets_encrypt"
+is_default = true

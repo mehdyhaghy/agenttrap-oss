@@ -1,0 +1,26 @@
+{
+  "name": "agenttrap-dashboard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --bun vite",
+    "typecheck": "bun --bun scripts/vue-tsc.ts --noEmit",
+    "build": "bun --bun scripts/vue-tsc.ts --noEmit && bun --bun vite build && touch ../internal/dashboard/dist/.keep"
+  },
+  "dependencies": {
+    "echarts": "^6.1.0",
+    "rrweb-player": "2.2.1",
+    "topojson-client": "^3.1.0",
+    "vue": "^3.5.45",
+    "vue-router": "^5.4.0",
+    "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "@types/topojson-client": "^3.1.5",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "typescript": "~6.0.3",
+    "vite": "~8.3.6",
+    "vue-tsc": "^3.3.14"
+  }
+}

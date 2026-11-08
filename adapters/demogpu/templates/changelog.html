@@ -1,0 +1,4 @@
+{{template "head" .}}
+<h1>Changelog</h1>
+{{range .Pack.Changelog}}<div class="card"><strong>{{.Title}}</strong> <span class="muted">— {{.Date}}</span><p>{{.Body}}</p></div>{{end}}
+{{template "foot" .}}

@@ -1,0 +1,13 @@
+# Local development: self-signed certificate created by scripts/init-secrets.sh.
+[certificates.dev]
+tls_cert = "/opt/pingap/tls/dev.crt"
+tls_key = "/opt/pingap/tls/dev.key"
+domains = "demogpu.example,*.demogpu.example"
+is_default = true
+
+# Production: replace the block above with Let's Encrypt. Certificates appear
+# in Certificate Transparency logs and attract scanners within minutes.
+#
+# [certificates.demogpu]
+# domains = "demogpu.example,www.demogpu.example,docs.demogpu.example,api.demogpu.example,console.demogpu.example,mcp.demogpu.example,status.demogpu.example,vllm.demogpu.example,aws.demogpu.example,k8s.demogpu.example"
+# acme = "lets_encrypt"

@@ -1,0 +1,16 @@
+{{template "head" .}}
+<div class="card" style="max-width:460px;margin:40px auto">
+<h2>Sign in to {{.Pack.Company.Name}}</h2>
+<p class="muted">to continue to <strong>{{.OAuth.Client}}</strong></p>
+{{if .Message}}<p class="msg">{{.Message}}</p>{{end}}
+{{with .OAuth.Scopes}}<p>This application will be able to:</p>
+<ul>{{range .}}<li>{{.Description}} <span class="muted">({{.Name}})</span></li>{{end}}</ul>{{end}}
+<form method="post" action="{{.OAuth.Action}}">
+{{range $k, $v := .OAuth.Hidden}}<input type="hidden" name="{{$k}}" value="{{index $v 0}}">
+{{end}}<input name="email" type="email" placeholder="Email" required>
+<input name="password" type="password" placeholder="Password" required>
+<button>Sign in and allow</button>
+</form>
+<p class="muted">Only allow applications you trust. You can revoke access in the console at any time.</p>
+</div>
+{{template "foot" .}}

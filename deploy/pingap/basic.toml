@@ -1,0 +1,11 @@
+[basic]
+# Answer proxy errors (for example the spoke restarting during a deploy) with
+# nginx's own page, so errors do not reveal the proxy.
+error_template = """<html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+"""

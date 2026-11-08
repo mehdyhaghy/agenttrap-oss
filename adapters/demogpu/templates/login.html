@@ -1,0 +1,12 @@
+{{template "head" .}}
+<div class="card" style="max-width:420px;margin:40px auto">
+<h2>Sign in to {{.Pack.Company.Name}}</h2>
+{{if .Message}}<p class="msg">{{.Message}}</p>{{end}}
+<form method="post" action="/login">
+<input name="email" type="email" placeholder="Email" required>
+<input name="password" type="password" placeholder="Password" required>
+<button>Sign in</button>
+</form>
+<p class="muted">SSO available on the Team plan.</p>
+</div>
+{{template "foot" .}}

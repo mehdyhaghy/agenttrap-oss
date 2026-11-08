@@ -1,0 +1,17 @@
+{
+  "name": "demogpu-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "bun --bun tsc --noEmit",
+    "build:rum": "bun build rum/app.ts --minify --target browser --outfile ../adapters/demogpu/static/assets/app.js",
+    "build": "bun run typecheck && bun run build:rum"
+  },
+  "dependencies": {
+    "@rrweb/record": "2.2.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "typescript": "~6.0.3"
+  }
+}

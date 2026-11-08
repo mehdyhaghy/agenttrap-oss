@@ -1,0 +1,31 @@
+# The build stage copies the whole context; keep secrets, key material,
+# data and local tooling out of it (and out of the build cache).
+.git
+.github
+.githooks
+.env
+.env.*
+secrets
+secrets.*
+pki-offline
+*.key
+*.pem
+*.p12
+*.pfx
+*.csr
+*.dump
+*.dump.tmp
+*.state.tar.gz
+backups
+*.mmdb
+*.pcap
+*.pcapng
+*.log
+.claude
+.playwright-mcp
+.DS_Store
+*.pdf
+*.md
+web/node_modules
+internal/dashboard/dist/assets
+site/node_modules

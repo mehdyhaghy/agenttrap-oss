@@ -1,0 +1,7 @@
+{{template "head" .}}
+<h1>Pricing</h1>
+<p class="muted">Per million tokens. No minimums. Volume discounts from $2k/month.</p>
+<table><tr><th>Model</th><th>Input</th><th>Output</th></tr>
+{{range .Pack.Pricing}}<tr><td>{{.Model}}</td><td>${{printf "%.2f" .Input}}</td><td>${{printf "%.2f" .Output}}</td></tr>{{end}}
+</table>
+{{template "foot" .}}

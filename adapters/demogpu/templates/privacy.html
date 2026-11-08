@@ -1,0 +1,11 @@
+{{template "head" .}}
+<h1>Privacy</h1>
+<div class="card">
+<p>{{.Pack.Company.Name}} is in public beta. This page describes what we collect when you use our website and API.</p>
+<p><strong>What we log.</strong> For security, abuse prevention and debugging we log request metadata (IP address, time, requested URL, HTTP headers, TLS handshake parameters) and the contents of requests sent to our API and MCP endpoints, including prompts. Our web pages record how they are used (pointer movement, clicks, scrolling, keystroke timing and page changes) to detect automated abuse. Text typed into fields is masked and never recorded.</p>
+<p><strong>Analytics.</strong> Our website uses Google Analytics, which sets cookies and sends usage data (pages viewed, approximate location, device and browser type) to Google. See <a href="https://policies.google.com/technologies/partner-sites">how Google uses this data</a>.</p>
+<p><strong>What we do not collect.</strong> We do not ask for or store email addresses for trial keys. Passwords submitted to the console sign-in form are not stored.</p>
+<p><strong>Retention.</strong> Logs are kept for as long as needed for security and abuse prevention and then deleted.</p>
+<p><strong>Contact.</strong> Use our <a href="https://{{.Domain}}/contact">contact form</a>. Messages you send through it, including the reply address you give, are kept to answer you.</p>
+</div>
+{{template "foot" .}}
